@@ -13,7 +13,7 @@ Some memory is freed up by deleting data frames not used for the analysis anymor
 <h4>2. Extracts only the measurements on the mean and standard deviation for each measurement.</h4>
 Mean and standard expressions are filtered using regular expressions.
 
-<h4>3. Uses descriptive activity names to name the activities in the data set.</v>
+<h4>3. Uses descriptive activity names to name the activities in the data set.</h4>
 Activity names are used from activity_labels.txt, which provides a mapping table to the numeric codes.
 
 <h4>4. Appropriately labels the data set with descriptive variable names.</h4>
