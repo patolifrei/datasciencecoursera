@@ -1,5 +1,5 @@
 # make sure the working directory is set to the UCI HAR Dataset folder!
-# e.g. setwd("/Users/Patrick/Documents/DataScience/Rpro/data/cleaningData/UCI HAR Dataset")
+setwd("/Users/Patrick/Documents/DataScience/Rpro/data/cleaningData/UCI HAR Dataset")
 
 # 1. Merges the training and the test sets to create one data set
 X_train<-read.table("train/X_train.txt")
@@ -39,7 +39,7 @@ names(Y_merge)<-"activity"
 names(subject_merge)<-"person"
 tidyDataSet<-cbind(subject_merge, Y_merge, X_merge)
 names(tidyDataSet)[2]<-paste("activity") # change "Y_merge" default to meaningful "activity" name
-write.table(tidyDataSet, "tidy_dataset.txt")
+write.table(tidyDataSet, "tidy_dataset_cleaning.txt")
 
 # 5. Creates a second, independent tidy data set with the average of each 
 #    variable for each activity and each subject
@@ -53,15 +53,17 @@ persons_id <- unique(subject_merge)[,1] # list of person numbers as persons migh
 
 tidyDataSet2<-tidyDataSet[0,] # new tidy data set, holding means and std devs by each activity/subject pair
                               # same column structure as the first tidy data set, but no row entries yet
+row_index<-1 # current row for writing data
 for (r in 1:num_Persons) {
     for (c in 1:num_Activity) {
-        tidyDataSet2[(r-1)*c+c,1]<-r
-        tidyDataSet2[(r-1)*c+c,2]<-activity_labels[c,2]
+        tidyDataSet2[row_index,1]<-r
+        tidyDataSet2[row_index,2]<-activity_labels[c,2]
         filter<-tidyDataSet[tidyDataSet$person==r & tidyDataSet$activity==activity_labels[c,2],] # filter data for specific
                                                                                                  # persion/activity-pair
         for (i in 1:(length(tidyDataSet)-2)) {
-            tidyDataSet2[(r-1)*c+c,i+2]<-mean(filter[,(i+2)])
+            tidyDataSet2[row_index,i+2]<-mean(filter[,(i+2)])
         }
+        row_index<-row_index + 1 
     }
 }
-
+write.table(tidyDataSet2, "tidy_dataset.txt")
