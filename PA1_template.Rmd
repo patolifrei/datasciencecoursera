@@ -1,0 +1,117 @@
+---
+title: "Reproducible research: Peer Assignment: 1"
+output: html_document
+---
+
+The code requires the file **activity.zip** in the working directory.
+
+<h2> 1. Loading and preprocessing the data </h2>
+
+```{r, echo=TRUE}
+library(dplyr)
+if (!file.exists("activity.csv")) {unzip("activity.zip")} # unzip only if not done yet
+
+activity<-read.csv("activity.csv", header=TRUE, na="NA") 
+activity$date<-as.Date(activity$date) # change format of date values
+activity$steps<-as.numeric(activity$steps) # change format of date values
+activity$interval<-as.numeric(activity$interval) # change format of date values
+head(activity)
+```
+
+<h2> 2. What is mean total number of steps taken per day? </h2>
+
+Missing values are ignored in this step.
+The histogram of the total number of steps taken each day:
+```{r, echo=TRUE}
+activity_day<-aggregate(steps ~ date, activity, sum)
+barplot(activity_day$steps, names.arg=activity_day$date,las=1,main="Total steps per day", srt = 60,xlab="date", ylab="steps", col="blue")
+```
+
+Calculated mean and median total number of steps taken per day:
+```{r, echo=TRUE}
+mean(activity_day$steps, na.rm=TRUE) # mean
+median(activity_day$steps, na.rm=TRUE) # median
+```
+
+Time series plot of 5-minute interval (x-axis) and the average number of steps taken.
+<h2> What is the average daily activity pattern? </h2>
+```{r, echo=TRUE}
+activity_ts<-activity %.% group_by(interval) %.% summarise(meanInterval = mean(steps, na.rm=TRUE))
+plot(activity_ts, type="l", main="Mean number of steps by interval", srt = 60,xlab="interval", ylab="mean steps", col="blue")
+```
+
+Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+```{r, echo=TRUE}
+activity_ts[which.max(activity_ts$meanInterval),1]
+           
+```
+
+<h2>Imputing missing values</h2>
+Calculate and report the total number of missing values in the dataset. Then, create a new data frame based on the original activity data by filling the missing values with the mean as calculated above for the interval plot.
+```{r, echo=TRUE}
+sum(!complete.cases(activity$steps))
+activity_filled <- activity
+n<-nrow(activity)
+for (r in 1:n) {
+    if (is.na(activity_filled$steps[r]))
+        {
+            activity_filled$steps[r]<-activity_ts$meanInterval[activity_ts$interval==activity$interval[r]]
+        }
+}
+
+```
+
+Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day.
+
+```{r, echo=TRUE}
+activity_day_filled<-aggregate(steps ~ date, activity_filled, sum)
+barplot(activity_day_filled$steps, names.arg=activity_day_filled$date,las=1,main="Total steps per day", srt = 60,xlab="date", ylab="steps", col="blue")
+```
+
+Calculated mean and median total number of steps taken per day:
+```{r, echo=TRUE}
+mean(activity_day_filled$steps) # mean
+median(activity_day_filled$steps) # median
+```
+The impcat using the above adjustment for NA's is low.
+
+```{r, echo=TRUE}
+step_diff <- sum(activity_day$steps) - sum(activity_day_filled$steps)
+```
+
+<h2>Are there differences in activity patterns between weekdays and weekends?</h2>
+
+The plot shows that on weekends, activity in the morning starting around 5:30 is higher than on weekdays. Both time series have a maximum in the morning around 9:00. During the day, 10:00 to 18:00, activity is lower on weekends. At night, activity is close to zero for both.
+```{r, echo=TRUE}
+week <- factor(weekdays(activity_filled$date) %in% c("Saturday","Sunday"), 
+               labels=c("weekday","weekend"))
+
+activity_dayType <- aggregate(activity_filled$steps, by=list(interval=activity_filled$interval, 
+                                                             weekday=week), mean)
+
+activity_weekend <- subset(activity_dayType,weekday=="weekday")
+activity_weekday <- subset(activity_dayType,weekday=="weekend")
+
+
+plot(activity_weekend$interval/max(activity_weekend$interval)*24,activity_weekend$x, type="l", col="blue", xlab="time", ylab="avg number of steps in each 5 min interval", lwd=3,xaxt = "n")
+axis(1, at=0:24, labels=paste(0:24,":00", sep=""))
+
+lines(activity_weekday$interval/max(activity_weekday$interval)*24, activity_weekday$x, col="red", lwd=3)
+
+legend("topright",lty = c(1,1), 
+        col = c("blue", "red"), 
+        legend = c("weekend", "weekday"))
+
+```
+
+
+```{r, echo=TRUE, fig.height=10}
+par(mfrow=c(2,1))
+plot(activity_weekend$interval/max(activity_weekend$interval)*24,activity_weekend$x, type="l", col="blue", xlab="time", ylab="steps", lwd=3,xaxt = "n", main="weekend")
+axis(1, at=0:24, labels=paste(0:24,":00", sep=""))
+
+plot(activity_weekday$interval/max(activity_weekday$interval)*24,activity_weekday$x, type="l", col="red", xlab="time", ylab="steps", lwd=3,xaxt = "n", main="weekday")
+axis(1, at=0:24, labels=paste(0:24,":00", sep=""))
+
+```
+
